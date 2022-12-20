@@ -15,8 +15,7 @@ try {
     process.exit(1);
 }
 
-simpleGit(config.localRepoPath).clean(simpleGit.CleanOptions.FORCE)
-simpleGit(config.localRepoPath).addConfig("add", config.localRepoPath, append = false, scope = 'global');
+simpleGit(config.localRepoPath).clean(simpleGit.CleanOptions.FORCE);
 
 const options = {
     headers: {
@@ -44,7 +43,7 @@ function autoUpdate() {
                 if (localLastPushDate === lastPushDate) {
                     console.log('Local repository is up-to-date');
                     setTimeout(() => {
-                        getLastPushDate();
+                        autoUpdate();
                     }, 5000);
                 } else {
                     console.log('Updating local repo...');
@@ -55,7 +54,7 @@ function autoUpdate() {
                         }
                         console.log(pullResult);
                         setTimeout(() => {
-                            getLastPushDate();
+                            autoUpdate();
                         }, 5000);
                     })
                 }
