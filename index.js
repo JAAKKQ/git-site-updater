@@ -79,6 +79,7 @@ const server = http.createServer((request, response) => {
             const payload = JSON.parse(body);
             // Check if the event type is a push event
             if (payload.event === 'push') {
+                console.log("Push event")
                 // Execute the JavaScript code you want to run in response to the push event
                 https.get(config.repoUrl, options, (response) => {
                     let data = '';
