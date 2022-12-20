@@ -80,7 +80,7 @@ const server = http.createServer((request, response) => {
             const payload = JSON.parse(body);
             console.log(payload);
             // Check if the event type is a push event
-            if (JSON.stringify(payload.forks_url).replace("/forks", "") === config.repoUrl) {
+            if (true) {
                 console.log("Push event");
                 // Execute the JavaScript code you want to run in response to the push event
                 https.get(config.repoUrl, options, (response) => {
