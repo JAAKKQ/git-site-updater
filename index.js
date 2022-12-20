@@ -3,11 +3,13 @@ const http = require('http');
 const { exec } = require('child_process');
 const simpleGit = require('simple-git');
 const fs = require('fs');
+const { dirname } = require('path');
+const RootFolder = dirname(require.main.filename);
 
 let config;
 
 try {
-    const configContent = fs.readFileSync('config.json');
+    const configContent = fs.readFileSync(RootFolder + '/config.json');
     config = JSON.parse(configContent);
     console.log(config);
 } catch (error) {
