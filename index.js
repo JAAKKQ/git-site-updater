@@ -70,6 +70,7 @@ const server = http.createServer((request, response) => {
     // Check if the request is a POST request and the payload is in the expected format
     response.end('Hello World\n');
     if (request.method === 'POST' && request.headers['content-type'] === 'application/json') {
+        console.log("Got post...")
         // Parse the request body as a JSON object
         let body = '';
         request.on('data', chunk => {
