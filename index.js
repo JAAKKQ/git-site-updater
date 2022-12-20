@@ -68,6 +68,7 @@ function autoUpdate() {
 // Set up the server to listen for webhook requests
 const server = http.createServer((request, response) => {
     // Check if the request is a POST request and the payload is in the expected format
+    response.end('Hello World\n');
     if (request.method === 'POST' && request.headers['content-type'] === 'application/json') {
         // Parse the request body as a JSON object
         let body = '';
