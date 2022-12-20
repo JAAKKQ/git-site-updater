@@ -86,6 +86,7 @@ const server = http.createServer((request, response) => {
                     });
                     response.on('end', () => {
                         const repoName = JSON.parse(data).name;
+                        console.log("Prosessing...")
                         if (payload.repository.name == repoName) {
                             autoUpdate();
                         }
