@@ -15,7 +15,8 @@ try {
     process.exit(1);
 }
 
-simpleGit(config.localRepoPath).clean(simpleGit.CleanOptions.FORCE);
+simpleGit(config.localRepoPath).clean(simpleGit.CleanOptions.FORCE)
+simpleGit(config.localRepoPath).addConfig("add", config.localRepoPath, append = false, scope = 'global');
 
 const options = {
     headers: {
