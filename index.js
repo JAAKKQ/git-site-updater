@@ -70,7 +70,7 @@ const server = http.createServer((request, response) => {
     // Check if the request is a POST request and the payload is in the expected format
     response.end('Hello World\n');
     if (request.method === 'POST' && request.headers['content-type'] === 'application/json') {
-        console.log("Got post...")
+        console.log("Got post...");
         // Parse the request body as a JSON object
         let body = '';
         request.on('data', chunk => {
@@ -78,9 +78,10 @@ const server = http.createServer((request, response) => {
         });
         request.on('end', () => {
             const payload = JSON.parse(body);
+            console.log(payload);
             // Check if the event type is a push event
             if (payload.event === 'push') {
-                console.log("Push event")
+                console.log("Push event");
                 // Execute the JavaScript code you want to run in response to the push event
                 https.get(config.repoUrl, options, (response) => {
                     let data = '';
