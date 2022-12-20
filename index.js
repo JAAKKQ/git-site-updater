@@ -42,9 +42,6 @@ function autoUpdate() {
                 console.log("Local: " + localLastPushDate);
                 if (localLastPushDate === lastPushDate) {
                     console.log('Local repository is up-to-date');
-                    setTimeout(() => {
-                        autoUpdate();
-                    }, 5000);
                 } else {
                     console.log('Updating local repo...');
                     simpleGit(config.localRepoPath).pull((error, pullResult) => {
@@ -53,9 +50,6 @@ function autoUpdate() {
                             return;
                         }
                         console.log(pullResult);
-                        setTimeout(() => {
-                            autoUpdate();
-                        }, 5000);
                     })
                 }
             });
