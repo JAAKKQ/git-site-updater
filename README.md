@@ -12,8 +12,8 @@ npm
 * simple-git
 * fs
 * path
-* Configuration
-## A config.json file must be located in the root directory of the project. It should contain the following properties:
+# Configuration
+A config.json file must be located in the root directory of the project. It should contain the following properties:
 
 ```json
 {
