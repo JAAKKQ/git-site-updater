@@ -17,8 +17,6 @@ try {
     process.exit(1);
 }
 
-simpleGit(config.localRepoPath).clean(simpleGit.CleanOptions.FORCE);
-
 const options = {
     headers: {
         'User-Agent': 'MyApp/1.0',
