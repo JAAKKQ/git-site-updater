@@ -1,21 +1,9 @@
 const https = require('https');
 const http = require('http');
 const { exec } = require('child_process');
-const simpleGit = require('simple-git');
 const fs = require('fs');
 const { dirname } = require('path');
 const RootFolder = dirname(require.main.filename);
-
-let repos;
-
-try {
-    const configContent = fs.readFileSync(RootFolder + '/config.json');
-    repos = JSON.parse(configContent);
-    console.log(repos);
-} catch (error) {
-    console.error(error);
-    process.exit(1);
-}
 
 const options = {
     headers: {
@@ -24,41 +12,36 @@ const options = {
 };
 
 function autoUpdate() {
-    for (const config of repos){
-        https.get(config.repoUrl, options, (response) => {
-            let data = '';
-            response.on('data', (chunk) => {
-                data += chunk;
-            });
-            response.on('end', () => {
-                const repoData = JSON.parse(data);
-                let lastPushDate = new Date(repoData.pushed_at).setSeconds(0);
-                console.log("Remote: " + lastPushDate);
-                exec('git log -1 --format=%cd', { cwd: config.localRepoPath }, (error, stdout) => {
-                    if (error) {
-                        console.error(error);
+    const reposFile = RootFolder + 'config.json';
+
+    // Read the JSON file
+    fs.readFile(reposFile, 'utf8', (err, data) => {
+        if (err) {
+            console.error(`Error reading JSON file: ${err}`);
+            return;
+        }
+
+        try {
+            const repos = JSON.parse(data);
+
+            // Iterate over each repository
+            repos.forEach((repo) => {
+                const { localRepoPath, repoUrl } = repo;
+
+                exec(`cd ${localRepoPath} && sudo git pull`, (err, stdout, stderr) => {
+                    if (err) {
+                        console.error(`Error updating local repo (${localRepoPath}): ${err}`);
                         return;
                     }
-                    const localLastPushDate = new Date(stdout.trim()).setSeconds(0);;
-                    console.log("Local: " + localLastPushDate);
-                    if (localLastPushDate === lastPushDate) {
-                        console.log('Local repository is up-to-date');
-                    } else {
-                        console.log('Updating local repo...');
-                        simpleGit(config.localRepoPath).pull((error, pullResult) => {
-                            if (error) {
-                                console.error(error);
-                                return;
-                            }
-                            console.log(pullResult);
-                        })
-                    }
+
+                    console.log(`Local repo (${localRepoPath}) updated successfully:\n${stdout}`);
                 });
-            }).on('error', (error) => {
-                console.error(error);
             });
-        })
-    }
+        } catch (error) {
+            console.error(`Error parsing JSON file: ${error}`);
+        }
+    });
+
 }
 
 // Set up the server to listen for webhook requests
@@ -76,25 +59,23 @@ const server = http.createServer((request, response) => {
             const payload = JSON.parse(body);
             console.log(payload);
             // Check if the event type is a push event
-            if (true) {
-                console.log("Push event");
-                // Execute the JavaScript code you want to run in response to the push event
-                https.get(config.repoUrl, options, (response) => {
-                    let data = '';
-                    response.on('data', (chunk) => {
-                        data += chunk;
-                    });
-                    response.on('end', () => {
-                        const repoName = JSON.parse(data).name;
-                        console.log("Prosessing...")
-                        if (payload.repository.name == repoName) {
-                            autoUpdate();
-                        }
-                    }).on('error', (error) => {
-                        console.error(error);
-                    });
-                })
-            }
+            console.log("Push event");
+            // Execute the JavaScript code you want to run in response to the push event
+            https.get(config.repoUrl, options, (response) => {
+                let data = '';
+                response.on('data', (chunk) => {
+                    data += chunk;
+                });
+                response.on('end', () => {
+                    const repoName = JSON.parse(data).name;
+                    console.log("Prosessing...")
+                    if (payload.repository.name == repoName) {
+                        autoUpdate(repoName);
+                    }
+                }).on('error', (error) => {
+                    console.error(error);
+                });
+            })
         });
     }
 });
