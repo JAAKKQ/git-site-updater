@@ -16,10 +16,12 @@ npm
 A config.json file must be located in the root directory of the project. It should contain the following properties:
 
 ```json
-{
-  "repoUrl": "https://api.github.com/repos/USERNAME/REPO",
-  "localRepoPath": "path/to/local/repo"
-}
+[
+    {
+        "localRepoPath": "/var/www/html/r3ne.net",
+        "repoUrl": "https://api.github.com/repos/jaakkq/r3ne.net"
+    }
+]
 ```
 **repoUrl:** The URL of the GitHub API endpoint for the repository you want to track.
 
