@@ -38,16 +38,14 @@ function autoUpdate(payload) {
             response.on('end', () => {
                 const repoName = JSON.parse(data).name;
                 console.log("Prosessing...")
-                if (payload.repository.name == repoName) {
-                    exec(`cd ${localRepoPath} && sudo git pull`, (err, stdout, stderr) => {
-                        if (err) {
-                            console.error(`Error updating local repo (${localRepoPath}): ${err}`);
-                            return;
-                        }
+                exec(`cd ${localRepoPath} && sudo git pull`, (err, stdout, stderr) => {
+                    if (err) {
+                        console.error(`Error updating local repo (${localRepoPath}): ${err}`);
+                        return;
+                    }
 
-                        console.log(`Local repo (${localRepoPath}) updated successfully:\n${stdout}`);
-                    });
-                }
+                    console.log(`Local repo (${localRepoPath}) updated successfully:\n${stdout}`);
+                });
             }).on('error', (error) => {
                 console.error(error);
             });
