@@ -13,7 +13,7 @@ const options = {
 
 let repos;
 
-fs.readFile(RootFolder + "config.json", 'utf8', (err, data) => {
+fs.readFile(RootFolder + "/config.json", 'utf8', (err, data) => {
     if (err) {
         console.error(`Error reading JSON file: ${err}`);
         return;
