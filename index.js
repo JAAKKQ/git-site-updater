@@ -26,7 +26,7 @@ fs.readFile(RootFolder + "/config.json", 'utf8', (err, data) => {
     }
 });
 
-function autoUpdate() {
+function autoUpdate(payload) {
     repos.forEach((repo) => {
         const { localRepoPath, repoUrl } = repo;
 
@@ -72,7 +72,7 @@ const server = http.createServer((request, response) => {
             // Check if the event type is a push event
             console.log("Push event");
             // Execute the JavaScript code you want to run in response to the push event
-            autoUpdate();
+            autoUpdate(payload);
         });
     }
 });
