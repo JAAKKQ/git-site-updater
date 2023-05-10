@@ -1,81 +1,66 @@
-const https = require('https');
-const http = require('http');
-const { exec } = require('child_process');
 const fs = require('fs');
-const { dirname } = require('path');
-const RootFolder = dirname(require.main.filename);
+const http = require('http');
+const WebSocket = require('ws');
+const simpleGit = require('simple-git');
 
-const options = {
-    headers: {
-        'User-Agent': 'MyApp/1.0',
-    },
-};
+// Read JSON data from file
+const jsonData = fs.readFileSync('config.json', 'utf8');
+const repositories = JSON.parse(jsonData);
 
-let repos;
-
-fs.readFile(RootFolder + "/config.json", 'utf8', (err, data) => {
-    if (err) {
-        console.error(`Error reading JSON file: ${err}`);
-        return;
-    }
-
-    try {
-        repos = JSON.parse(data);
-    } catch (error) {
-        console.error(`Error parsing JSON file: ${error}`);
-    }
-});
-
-function autoUpdate(payload) {
-    repos.forEach((repo) => {
-        const { localRepoPath, repoUrl } = repo;
-
-        https.get(repoUrl, options, (response) => {
-            let data = '';
-            response.on('data', (chunk) => {
-                data += chunk;
-            });
-            response.on('end', () => {
-                const repoName = JSON.parse(data).name;
-                console.log("Prosessing...")
-                exec(`cd ${localRepoPath} && sudo git pull`, (err, stdout, stderr) => {
-                    if (err) {
-                        console.error(`Error updating local repo (${localRepoPath}): ${err}`);
-                        return;
-                    }
-
-                    console.log(`Local repo (${localRepoPath}) updated successfully:\n${stdout}`);
-                });
-            }).on('error', (error) => {
-                console.error(error);
-            });
-        })
-    });
-}
-
-// Set up the server to listen for webhook requests
-const server = http.createServer((request, response) => {
-    // Check if the request is a POST request and the payload is in the expected format
-    response.end('Hello World\n');
-    if (request.method === 'POST' && request.headers['content-type'] === 'application/json') {
-        console.log("Got post...");
-        // Parse the request body as a JSON object
-        let body = '';
-        request.on('data', chunk => {
-            body += chunk.toString();
-        });
-        request.on('end', () => {
-            const payload = JSON.parse(body);
-            console.log(payload);
-            // Check if the event type is a push event
-            console.log("Push event");
-            // Execute the JavaScript code you want to run in response to the push event
-            autoUpdate(payload);
-        });
-    }
-});
+// Create WebSocket server
+const server = http.createServer();
+const wss = new WebSocket.Server({ server });
 
 // Start the server
-server.listen(2006, () => {
-    console.log('Server listening on port 2006');
+const port = 2006;
+
+wss.on('connection', (ws) => {
+  ws.on('message', (message) => {
+    try {
+      const pushEvent = JSON.parse(message);
+
+      const { repository, after } = pushEvent;
+
+      // Find matching repository
+      const matchedRepo = repositories.find((repo) => repo.repoUrl === repository.clone_url);
+      if (!matchedRepo) {
+        console.log(`No matching repository found for ${repository.clone_url}`);
+        return;
+      }
+
+      const localRepoPath = matchedRepo.localRepoPath;
+
+      const git = simpleGit(localRepoPath);
+
+      // Check last push date from remote repository
+      git.revparse('HEAD', (err, localCommitHash) => {
+        if (err) {
+          console.error(`Error checking local repository: ${err.message}`);
+          return;
+        }
+
+        localCommitHash = localCommitHash.trim();
+
+        if (localCommitHash !== after) {
+          // Update local repository
+          git.pull((err) => {
+            if (err) {
+              console.error(`Error updating local repository: ${err.message}`);
+              return;
+            }
+
+            console.log(`Local repository updated: ${localRepoPath}`);
+          });
+        } else {
+          console.log(`No update needed for repository: ${localRepoPath}`);
+        }
+      });
+    } catch (error) {
+      console.error(`Error processing WebSocket message: ${error.message}`);
+    }
+  });
+});
+
+server.listen(port, () => {
+  console.log(`WebSocket server listening on port ${port}`);
 });
