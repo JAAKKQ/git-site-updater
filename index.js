@@ -6,12 +6,12 @@ const fs = require('fs');
 const { dirname } = require('path');
 const RootFolder = dirname(require.main.filename);
 
-let config;
+let repos;
 
 try {
     const configContent = fs.readFileSync(RootFolder + '/config.json');
-    config = JSON.parse(configContent);
-    console.log(config);
+    repos = JSON.parse(configContent);
+    console.log(repos);
 } catch (error) {
     console.error(error);
     process.exit(1);
@@ -24,39 +24,41 @@ const options = {
 };
 
 function autoUpdate() {
-    https.get(config.repoUrl, options, (response) => {
-        let data = '';
-        response.on('data', (chunk) => {
-            data += chunk;
-        });
-        response.on('end', () => {
-            const repoData = JSON.parse(data);
-            let lastPushDate = new Date(repoData.pushed_at).setSeconds(0);
-            console.log("Remote: " + lastPushDate);
-            exec('git log -1 --format=%cd', { cwd: config.localRepoPath }, (error, stdout) => {
-                if (error) {
-                    console.error(error);
-                    return;
-                }
-                const localLastPushDate = new Date(stdout.trim()).setSeconds(0);;
-                console.log("Local: " + localLastPushDate);
-                if (localLastPushDate === lastPushDate) {
-                    console.log('Local repository is up-to-date');
-                } else {
-                    console.log('Updating local repo...');
-                    simpleGit(config.localRepoPath).pull((error, pullResult) => {
-                        if (error) {
-                            console.error(error);
-                            return;
-                        }
-                        console.log(pullResult);
-                    })
-                }
+    for (const config of repos){
+        https.get(config.repoUrl, options, (response) => {
+            let data = '';
+            response.on('data', (chunk) => {
+                data += chunk;
             });
-        }).on('error', (error) => {
-            console.error(error);
-        });
-    })
+            response.on('end', () => {
+                const repoData = JSON.parse(data);
+                let lastPushDate = new Date(repoData.pushed_at).setSeconds(0);
+                console.log("Remote: " + lastPushDate);
+                exec('git log -1 --format=%cd', { cwd: config.localRepoPath }, (error, stdout) => {
+                    if (error) {
+                        console.error(error);
+                        return;
+                    }
+                    const localLastPushDate = new Date(stdout.trim()).setSeconds(0);;
+                    console.log("Local: " + localLastPushDate);
+                    if (localLastPushDate === lastPushDate) {
+                        console.log('Local repository is up-to-date');
+                    } else {
+                        console.log('Updating local repo...');
+                        simpleGit(config.localRepoPath).pull((error, pullResult) => {
+                            if (error) {
+                                console.error(error);
+                                return;
+                            }
+                            console.log(pullResult);
+                        })
+                    }
+                });
+            }).on('error', (error) => {
+                console.error(error);
+            });
+        })
+    }
 }
 
 // Set up the server to listen for webhook requests
