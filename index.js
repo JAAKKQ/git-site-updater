@@ -11,37 +11,48 @@ const options = {
     },
 };
 
+let repos;
+
+fs.readFile(RootFolder + "config.json", 'utf8', (err, data) => {
+    if (err) {
+        console.error(`Error reading JSON file: ${err}`);
+        return;
+    }
+
+    try {
+        repos = JSON.parse(data);
+    } catch (error) {
+        console.error(`Error parsing JSON file: ${error}`);
+    }
+});
+
 function autoUpdate() {
-    const reposFile = RootFolder + 'config.json';
+    repos.forEach((repo) => {
+        const { localRepoPath, repoUrl } = repo;
 
-    // Read the JSON file
-    fs.readFile(reposFile, 'utf8', (err, data) => {
-        if (err) {
-            console.error(`Error reading JSON file: ${err}`);
-            return;
-        }
-
-        try {
-            const repos = JSON.parse(data);
-
-            // Iterate over each repository
-            repos.forEach((repo) => {
-                const { localRepoPath, repoUrl } = repo;
-
-                exec(`cd ${localRepoPath} && sudo git pull`, (err, stdout, stderr) => {
-                    if (err) {
-                        console.error(`Error updating local repo (${localRepoPath}): ${err}`);
-                        return;
-                    }
-
-                    console.log(`Local repo (${localRepoPath}) updated successfully:\n${stdout}`);
-                });
+        https.get(repoUrl, options, (response) => {
+            let data = '';
+            response.on('data', (chunk) => {
+                data += chunk;
             });
-        } catch (error) {
-            console.error(`Error parsing JSON file: ${error}`);
-        }
-    });
+            response.on('end', () => {
+                const repoName = JSON.parse(data).name;
+                console.log("Prosessing...")
+                if (payload.repository.name == repoName) {
+                    exec(`cd ${localRepoPath} && sudo git pull`, (err, stdout, stderr) => {
+                        if (err) {
+                            console.error(`Error updating local repo (${localRepoPath}): ${err}`);
+                            return;
+                        }
 
+                        console.log(`Local repo (${localRepoPath}) updated successfully:\n${stdout}`);
+                    });
+                }
+            }).on('error', (error) => {
+                console.error(error);
+            });
+        })
+    });
 }
 
 // Set up the server to listen for webhook requests
@@ -61,21 +72,7 @@ const server = http.createServer((request, response) => {
             // Check if the event type is a push event
             console.log("Push event");
             // Execute the JavaScript code you want to run in response to the push event
-            https.get(config.repoUrl, options, (response) => {
-                let data = '';
-                response.on('data', (chunk) => {
-                    data += chunk;
-                });
-                response.on('end', () => {
-                    const repoName = JSON.parse(data).name;
-                    console.log("Prosessing...")
-                    if (payload.repository.name == repoName) {
-                        autoUpdate(repoName);
-                    }
-                }).on('error', (error) => {
-                    console.error(error);
-                });
-            })
+            autoUpdate();
         });
     }
 });
