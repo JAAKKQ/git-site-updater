@@ -26,38 +26,52 @@ const options = {
 function autoUpdate() {
     for (const config of repos) {
         https.get(config.repoUrl, options, (response) => {
+            const contentType = response.headers['content-type'];
             let data = '';
+
             response.on('data', (chunk) => {
                 data += chunk;
             });
+
             response.on('end', () => {
-                const repoData = JSON.parse(data);
-                let lastPushDate = new Date(repoData.pushed_at).setSeconds(0);
-                console.log("Remote: " + lastPushDate);
-                exec('git log -1 --format=%cd', { cwd: config.localRepoPath }, (error, stdout) => {
-                    if (error) {
-                        console.error(error);
-                        return;
-                    }
-                    const localLastPushDate = new Date(stdout.trim()).setSeconds(0);;
-                    console.log("Local: " + localLastPushDate);
-                    if (localLastPushDate === lastPushDate) {
-                        console.log('Local repository is up-to-date');
-                    } else {
-                        console.log('Updating local repo...');
-                        simpleGit(config.localRepoPath).pull((error, pullResult) => {
+                if (contentType.includes('application/json')) {
+                    try {
+                        const repoData = JSON.parse(data);
+                        let lastPushDate = new Date(repoData.pushed_at).setSeconds(0);
+                        console.log("Remote: " + lastPushDate);
+
+                        exec('git log -1 --format=%cd', { cwd: config.localRepoPath }, (error, stdout) => {
                             if (error) {
                                 console.error(error);
                                 return;
                             }
-                            console.log(pullResult);
-                        })
+
+                            const localLastPushDate = new Date(stdout.trim()).setSeconds(0);
+                            console.log("Local: " + localLastPushDate);
+
+                            if (localLastPushDate === lastPushDate) {
+                                console.log('Local repository is up-to-date');
+                            } else {
+                                console.log('Updating local repo...');
+                                simpleGit(config.localRepoPath).pull((error, pullResult) => {
+                                    if (error) {
+                                        console.error(error);
+                                        return;
+                                    }
+                                    console.log(pullResult);
+                                });
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Error parsing JSON:', error);
                     }
-                });
+                } else {
+                    console.error('Unexpected content type:', contentType);
+                }
             }).on('error', (error) => {
-                console.error(error);
+                console.error('Error retrieving data:', error);
             });
-        })
+        });
     }
 }
 
