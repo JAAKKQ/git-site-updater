@@ -1,3 +1,8 @@
+**This is stupid and not secure just use CRON.**
+Example: 
+```
+* * * * * cd /var/www/html && git pull
+```
 # Git Auto Updater
 This Node.js app listens for push events on a specified GitHub repository and automatically updates a local copy of the repository if a new commit has been made.
 
